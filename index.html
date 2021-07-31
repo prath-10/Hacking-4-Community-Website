@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <link rel='stylesheet' type='text/css' href='https://api.tomtom.com/maps-sdk-for-web/cdn/5.x/5.69.1/maps/maps.css'>
+    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/5.x/5.69.1/maps/maps-web.min.js"></script>
+    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/5.x/5.69.1/services/services-web.min.js"></script>
+    <script src="./index.js"></script>
+    <title>SafePrep</title>
+    <style type="text/css">
+        #map {
+          height: 400px;
+          width: 100%;
+        }
+      </style>
+      <script>
+
+        function initMap() {
+          const uluru = { lat: -25.344, lng: 131.036 };
+          const map = new google.maps.Map(document.getElementById("map"), {
+            zoom: 4,
+            center: uluru,
+          });
+          const marker = new google.maps.Marker({
+            position: uluru,
+            map: map,
+          });
+        }
+      </script>
+</head>
+<body>
+    <div class="navbar">
+        <ul class="nav-list">
+           <img src="/img/logopurp.gif" alt="">
+           <li><a href="#contact">Emergency Contacts</a></li>
+           <li><a href="#projects">News</a></li>
+           <li><a href="#prep">Prep Kit</a></li>
+           <input type="text" id="queue" value="">
+    <button class="navbtn" onclick="search()">SEARCH</button>
+    <button class="navbtn" onclick="clearMark()">Clear</button>
+
+        </ul>
+     </nav>
+  </div>
+  <section id="home">
+    <img class="homeimg" src="/img/logoblk1.gif" alt="">
+    <h1 class="header">SafePrep</h1>
+            
+    <p>Disaster Management</p>
+
+</section>
+<section id="about">
+    <h2>
+        Where are you located?
+    </h2>
+  
+    <br>
+    <br>
+    
+        <div id='distance'></div>
+
+    <div id="map" style="width: 1910; height: 1080;"></div>
+    <script>
+        var la = [-118.24, 34.05]
+        
+        var trafficFlowConfig = {
+            key: "B9K6O9ENhZT2yTvZpBVmDU8Q6JBzSlle",
+            theme: {
+                style: "relative-delay",
+                source: "vector"
+            },
+            refresh: 30000
+        }
+
+        var trafficIncidentsConfig = {
+            key: "B9K6O9ENhZT2yTvZpBVmDU8Q6JBzSlle",
+            incidentTiles: {
+                style: "tomtom://vectors/1/s2"
+            },
+            incidentDeatils: {
+                style: "s2"
+            }
+        }
+
+        var map = tt.map({
+            key: "B9K6O9ENhZT2yTvZpBVmDU8Q6JBzSlle",
+            center: la,
+            container: "map",
+            zoom: 14,
+            style: 'tomtom://vector/1/basic-main'
+        });
+
+        var markers = []
+        map.on('click', function(event){
+            console.log(event)
+            var marker = new tt.Marker()
+                .setLngLat(event.lngLat)
+                .addTo(map);
+            markers.push(marker)
+        })
+
+        map.on('load', function(){
+            map.addTier(new tt.TrafficFlowTilesTier(trafficFlowConfig));
+        });
+
+        var clearMark = function() {
+            for(marker of markers) {
+                marker.remove();
+            }
+            markers = [];
+
+        }
+
+        var move = function(lnglat) {
+            map.flyTo({
+                center:lnglat,
+                zoom: 14
+            })
+        }
+
+        var handleResults = function(result) {
+            console.log(result);
+            if (result.results) {
+                move(result.results[0].position)
+
+                var marker = new tt.Marker()
+                    .setLngLat(result.results[0].position)
+                    .addTo(map);
+            }
+        }
+
+        var search = function() {
+            tt.services.fuzzySearch({
+                key: "B9K6O9ENhZT2yTvZpBVmDU8Q6JBzSlle",
+                query: document.getElementById("queue").value,
+                boundingBox: map.getBounds()
+
+            }).go().then(handleResults)
+        }
+
+        var displayRoute = function(geoJSON) {
+            layer = map.addLayer({
+                'id' : 'route',
+                'type' : 'line',
+                'source' : {
+                    "type": "geojson",
+                    "data": geoJSON
+                },
+                "paint" : {
+                    "line-color" : "green",
+                    "line-width" : 6
+                } 
+            })
+
+        }
+
+        var route = function() {
+            var options = {
+                key: "B9K6O9ENhZT2yTvZpBVmDU8Q6JBzSlle",
+                locations: [],
+                travelMode: 'pedestrian' 
+            }
+            for(marker of markers) {
+                options.locations.push(marker.getLngLat())
+            }
+            tt.services.calculateRoute(options).go().then(
+                function(routeData) {
+                    document.getElementById('distance').innerHTML = "Total Distance"+routeData.routes[0].summary.lengthInMeters+"mts"
+
+                    console.log(routeData)
+                    var geop = routeData.toGeoJson();
+                    displayRoute(geop)
+                }
+            )
+        }
+    </script>
+    <br>
+    <br>
+    <h4>Enter ZIP Code:</h4>
+    <input type="text" name="ZIP Code" id="">
+</section>
+<section id="prep">
+    <h2>Stay Prepared</h2>
+    <div style="text-align: center;"> 
+        <button style="margin: auto;">
+        <a href="https://www.ready.gov/kit">
+        <div class="probtn btn-1">
+
+        </div>
+    </div> 
+    </a>
+    </button>
+    <br>
+    <br>
+    <br> 
+    <br>
+    <br>
+</div>
+    <div class="evach2">
+    <h2 id="theh2">Practice your evac drills</h2>
+    </div>
+    <div style="text-align: center;"> 
+        <button style="margin: auto;">
+        <a href="https://www.publicsafety.upenn.edu/pennready/emergency-drills/">
+        <div class="probtn btn-2">
+
+        
+    </div> 
+    </a>
+    </button>
+
+</section>
+<section id="projects">
+    <h2>News</h2>
+    <h2>Activity near you</h2>
+    <div class="container">
+    <div style="text-align: center;">
+    <button style="margin: 15px; border-radius: 10px;">
+        <a href="https://www.latimes.com/wildfires-map/">
+        <div class="probtn btn-3">
+            <h3>Wild Fire</h3>
+                <div class="card-content">
+               
+                </div>
+        </div> 
+    </a>
+    </button> 
+    
+    <button style="margin: 15px; border-radius: 10px;">
+        <a href="https://water.weather.gov/ahps/forecasts.php">
+        <div class="probtn btn-4">
+            <h3>Floods</h3>
+                <div class="card-content">
+                   
+                </div>
+        </div> 
+    </a>
+    </button>
+    <button style="margin: 15px; border-radius: 10px;">
+        <a href="https://earthquake.usgs.gov/earthquakes/map/?extent=12.38293,-148.44727&extent=57.61011,-41.57227">
+        <div class="probtn btn-5">
+            <h3>Earthquake</h3>
+                <div class="card-content">
+                   
+                </div>
+        </div> 
+    </a>
+    </button>
+    
+    
+    
+</div>
+</section>
+
+<!--<section class="emerg">
+    <div class="Gmap">
+        <h3>Google Maps</h3>      
+        <div id="map"></div>
+        <script
+          src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCocvNufI9yHPXJtEZqsYKMBqjy8ibM4U0&callback=initMap&libraries=&v=weekly"
+          async
+        ></script>
+    </div>
+
+</section>-->
+<section id="contact">
+    <h1>Emergency Contacts</h1>
+    <div class="local">
+        <h2>Local <br> Resources</h2> 
+        <br>
+        <p>
+            Emergency: 911<br>
+            Local Fire Department: (213) 978-3800<br>
+            Nearest Hospital: (323) 267-0477<br>
+            Local Police Department: +1 310-444-0701<br>
+            Nearest Red Cross: +1 310-445-9908 <br>
+    
+          </p>
+   </div>
+   <div class="local">
+    <h2>Find a shelter near you</h2> 
+    <br>
+    <p>  Shelter:    <br>
+        1 (800) 548 - 6047 <br>
+        (213) 629-1227  <br>
+        +1 213-683-3333 <br>
+    +1 323-960-3333</p>
+    
+</div>
+
+</section>
+
+
+
+
+</body>
+</html>
